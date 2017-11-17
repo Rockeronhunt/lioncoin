@@ -1,0 +1,11 @@
+[Unit]
+Description=LionCoin daemon serivce
+After=network.target
+
+[Service]
+Type=simple
+User=LionCoin
+ExecStart=/opt/LionCoin/LionCoind
+
+[Install]
+WantedBy=multi-user.target

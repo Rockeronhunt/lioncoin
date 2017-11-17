@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# PROVIDE: LionCoin
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+
+#
+# Add the following lines to /etc/rc.conf.local or /etc/rc.conf
+# to enable this service:
+#
+# LionCoin_enable (bool): Set to NO by default. Set this variable to YES if you want to enable LionCoin service.
+# LionCoin_config (path): Set to /usr/local/etc/LionCoin.conf by default.
+# LionCoin_user:  The user account LionCoin daemon runs as. It uses 'root' user by default.
+# LionCoin_group: The group account LionCoin daemon runs as. It uses 'wheel' group by default.
+# LionCoin_datadir (str): Default to "/var/db/LionCoin". Base data directory.
+
+. /etc/rc.subr
+
+name=LionCoin
+rcvar=LionCoin_enable
+
+: ${LionCoin_enable:=NO}
+: ${LionCoin_config=/usr/local/etc/LionCoin.conf}
+: ${LionCoin_datadir=/var/db/LionCoin}
+: ${LionCoin_user="root"}
+: ${LionCoin_group="wheel"}
+
+required_files=${LionCoin_config}
+command=/usr/local/bin/LionCoind
+LionCoin_chdir=${LionCoin_datadir}
+pidfile="${LionCoin_datadir}/LionCoind.pid"
+stop_cmd=LionCoin_stop
+command_args="-conf=${LionCoin_config} -datadir=${LionCoin_datadir} -daemon -pid=${pidfile}"
+start_precmd="${name}_prestart"
+
+LionCoin_create_datadir()
+{
+	echo "Creating data directory"
+	eval mkdir -p ${LionCoin_datadir}
+	[ $? -eq 0 ] && chown -R ${LionCoin_user}:${LionCoin_group} ${LionCoin_datadir}
+}
+
+LionCoin_prestart()
+{
+	if [ ! -d "${LionCoin_datadir}/." ]; then
+		LionCoin_create_datadir || return 1
+	fi
+}
+
+LionCoin_requirepidfile()
+{
+	if [ ! "0`check_pidfile ${pidfile} ${command}`" -gt 1 ]; then
+		echo "${name} not running? (check $pidfile)."
+		exit 1
+	fi
+}
+
+LionCoin_stop()
+{
+    LionCoin_requirepidfile
+
+	echo "Stopping ${name}."
+	eval ${command} -conf=${LionCoin_config} -datadir=${LionCoin_datadir} stop
+	wait_for_pids ${rc_pid}
+}
+
+load_rc_config $name
+run_rc_command "$1"

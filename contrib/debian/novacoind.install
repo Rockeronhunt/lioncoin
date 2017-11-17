@@ -1,0 +1,2 @@
+debian/bin/LionCoind usr/bin
+src/LionCoind usr/lib/LionCoin
